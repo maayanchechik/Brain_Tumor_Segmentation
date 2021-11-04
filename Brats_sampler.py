@@ -1,14 +1,14 @@
 import torch
-import torch.utils.data.BatchSampler
-import numpy
+from torch.utils.data import BatchSampler
+import numpy as np
 
-class Brats_sampler(BatchSampler):
-    def __init__(self, batch_len, patch_size):
+class BratsSampler(BatchSampler):
+    def __init__(self, batch_len):
         self.batch_len = batch_len
-        self.patch_size = patch_size
+
 
     def __iter__(self):
-        batch = np.random.randint(low=1, high=370, size = batch_len)
+        batch = np.random.randint(low=1, high=370, size = self.batch_len)
         yield batch
         
             
