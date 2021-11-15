@@ -10,6 +10,7 @@ class BratsDataset(Dataset):
         super().__init__()
         self.data_path = "/home/mc/Brain_Tumor_Segmentation/data/data/BraTS2020_training_data/content/data_patients/"
         self.patch_size = patch_size
+        self.brain_size = np.array([4,240,240,154])
 
     def get_brain(self,index):
         index_path_image = self.data_path + "volume_" + str(index) + "_image.pt"
@@ -18,49 +19,45 @@ class BratsDataset(Dataset):
         brain_labels = torch.load(index_path_labels)
         return brain_image, brain_labels
 
+    def fix_patch_center(self, center_per_dim, dim):
+        if(center_per_dim+(self.patch_size//2) > self.brain_size[dim]):
+            return self.brain_size[dim]-self.patch_size/2
+        if(center_per_dim -(self.patch_size//2 - 1) < 0):
+            return self.patch_size//2 - 1
+        else:
+            return center_per_dim
+        
+
     def get_patch(self, brain_image, brain_labels):
-        #where retuns a list of arrays. Each array represents a dimention.
-        #In each array there is the dimentions indices of the labels that are 1.
+        #where() returns a list of arrays. Each array represents a dimention.
+        #In each array there are the dimention's indices of the labels that are 1.
         #All in all this list is an ordered account of the indices of tumor pixels.
         tumor_indices_per_dim = np.where(brain_labels==1)
 
-        ###instead of : do loop
-        #modalities = array_of_indexes[0]
-        #x = array_of_indexes[1]
-        #y =array_of_indexes[2]
-        #z = array_of_indexes[3]
-        
-        #tumor_indices_list_per_dim = []
-        #for dim in range(4):
-        #    tumor_indices_list_per_dim.append(list_array_of_i_per_dim[dim])
-        
-
-        #index is randomly chosen to give the indices for this patch's center 
+        #index is randomly chosen int that chooses which tumor index will be the center 
         index = np.random.randint(0, len(tumor_indices_per_dim[0]))
 
-        print(tumor_indices_per_dim[1])
-        ###instead of: do loop 
-        #m_i = modalities[index]
-        #x_i = x[index]
-        #y_i = y[index]
-        #z_i = z[index]
-
+        #The first cell is the dim of the modules which is not sliced,
+        #so will stay empty but is here so it wont confuse the dim count.
         #i_start_patch_per_dim = [] but name to long so:
-        i_s = []
+        i_s = np.array([0,0,0,0])
         #i_end_patch_per_dim = []
-        i_e = []
-        for dim in range(4):
+        i_e = np.array([0,0,0,0])
+        
+        for dim in range(1,4):
             cur_i_patch_center = tumor_indices_per_dim[dim][index]
-            i_patch_start = int(cur_i_patch_center - self.patch_size/2)
-            i_patch_end = int(cur_i_patch_center + self.patch_size/2)
-            i_s.append(i_patch_start)
-            i_e.append(i_patch_end)
-            
-        patch_image = brain_image[i_s[0]:i_e[0], i_s[1]:i_e[1], i_s[2]:i_e[2], i_s[3]:i_e[3]]
-        print("patch_image",patch_image.shape)
-        patch_labels = brain_labels[i_s[0]:i_e[0], i_s[1]:i_e[1], i_s[2]:i_e[2], i_s[3]:i_e[3]]
+            cur_i_patch_center = self.fix_patch_center(cur_i_patch_center,dim)
+            i_s[dim] = int(cur_i_patch_center - self.patch_size/2)
+            i_e[dim] = int(cur_i_patch_center + self.patch_size/2)
 
+        print("i_s",i_s)
+        print("i_e",i_e)
+        patch_image = brain_image[:, i_s[1]:i_e[1], i_s[2]:i_e[2], i_s[3]:i_e[3]]
+        patch_labels = brain_labels[:, i_s[1]:i_e[1], i_s[2]:i_e[2], i_s[3]:i_e[3]]
+        print("patch_image size", patch_image.shape)
+        print("brain_image",brain_image.shape)
         return patch_image, patch_labels
+
 
     def __getitem__(self, index):
         brain_image, brain_labels = self.get_brain(index)
