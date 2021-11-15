@@ -20,8 +20,8 @@ class BratsDataset(Dataset):
         return brain_image, brain_labels
 
     def fix_patch_center(self, center_per_dim, dim):
-        if(center_per_dim+(self.patch_size//2) > self.brain_size[dim]):
-            return self.brain_size[dim]-self.patch_size/2
+        if(center_per_dim+1+(self.patch_size//2) > self.brain_size[dim]):
+            return self.brain_size[dim]-self.patch_size/2 - 1
         if(center_per_dim -(self.patch_size//2 - 1) < 0):
             return self.patch_size//2 - 1
         else:
@@ -47,15 +47,11 @@ class BratsDataset(Dataset):
         for dim in range(1,4):
             cur_i_patch_center = tumor_indices_per_dim[dim][index]
             cur_i_patch_center = self.fix_patch_center(cur_i_patch_center,dim)
-            i_s[dim] = int(cur_i_patch_center - self.patch_size/2)
-            i_e[dim] = int(cur_i_patch_center + self.patch_size/2)
+            i_s[dim] = int(cur_i_patch_center +1 - self.patch_size/2)
+            i_e[dim] = int(cur_i_patch_center +1+ self.patch_size/2)
 
-        print("i_s",i_s)
-        print("i_e",i_e)
         patch_image = brain_image[:, i_s[1]:i_e[1], i_s[2]:i_e[2], i_s[3]:i_e[3]]
         patch_labels = brain_labels[:, i_s[1]:i_e[1], i_s[2]:i_e[2], i_s[3]:i_e[3]]
-        print("patch_image size", patch_image.shape)
-        print("brain_image",brain_image.shape)
         return patch_image, patch_labels
 
 
