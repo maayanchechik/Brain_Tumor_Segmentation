@@ -41,7 +41,7 @@ class UNet_3D(nn.Module):
         self.conv14 = nn.Conv3d(32, 32, kernel_size = (3,3,3), padding = padding)
         self.gnorm14 = nn.GroupNorm(num_groups,32)
 
-        self.conv_last = nn.Conv3d(32, 4, kernel_size = (1,1,1))
+        self.conv_last = nn.Conv3d(32, 3, kernel_size = (1,1,1))
 
         #other
         self.relu = nn.ReLU()
@@ -86,10 +86,10 @@ class UNet_3D(nn.Module):
         y12_drop = self.dropout(y12_con)
         y13 = self.gnorm13(self.relu(self.conv13(y12_drop)))
         y14 = self.gnorm14(self.relu(self.conv14(y13)))
-        cov_out = self.conv_last(y14)
+        conv_out = self.conv_last(y14)
         activation_out = self.final_activation(y14)
 
-        return cov_out, activation_out 
+        return conv_out, activation_out 
 
 
         

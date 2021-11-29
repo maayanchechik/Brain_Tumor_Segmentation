@@ -11,4 +11,5 @@ for batch_i,(patch_image, patch_labels) in enumerate(dataloader):
     print("batch ",batch_i)
     print(patch_image.size())
     print(patch_labels.size())
+    print(patch_labels)
 print("here")
