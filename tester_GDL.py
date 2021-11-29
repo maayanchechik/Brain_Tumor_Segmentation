@@ -11,7 +11,19 @@ from dice_loss import GDL
 #print(d)
 #e = a*b
 #print(e)
-pred = torch.ones([2,3,2,2,2], dtype=float)
-gt = torch.ones([3,2,2,2], dtype=float)
-class_weight = torch.tensor([0.2,0.3,0.5],dtype=float)
-loss = GDL()(pred,gt,class_weight)
+
+run = True
+if(run == True):
+    pred = torch.ones([2,3,2,2,2], dtype=float)
+    gt = torch.ones([2,3,2,2,2], dtype=float)
+    class_weight = torch.tensor([0.2,0.3,0.5],dtype=float)
+    loss = GDL()(pred,gt,class_weight)
+else:
+    bc = torch.ones([2,3], dtype=float)
+    c = torch.tensor([4,2,3], dtype=float)
+    print("bc = ", bc, bc.shape)
+    print("\n c = ", c, c.shape)
+    #mul = bc*c
+    #print("\nbc * c = ", mul)
+    matmul = torch.matmul(bc,c)
+    print("\nmatmul(bc,c) = ", matmul)
