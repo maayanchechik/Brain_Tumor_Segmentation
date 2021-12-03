@@ -36,8 +36,9 @@ def group_brain():
                 np_brain_labels = np.concatenate((np_brain_labels, np_slice_labels),axis=0)
 
         print("patient ", patient_num)
-        tensor_brain_image = torch.from_numpy(np_brain_image)
-        tensor_brain_labels = torch.from_numpy(np_brain_labels)
+        tensor_brain_image = torch.FloatTensor(np_brain_image)
+        tensor_brain_labels = torch.FloatTensor(np_brain_labels)
+        print("tensor_brain_image",tensor_brain_image.type())
         #permute the brain array to the dimentions expected in the network
         print("tensor_brain_image.size() ",tensor_brain_image.size())
         tensor_brain_image = tensor_brain_image.permute(3,1,2,0)

@@ -13,32 +13,38 @@ class GDL(nn.Module):
         #shape should be [3]
         #print(inter.shape)
         #return inter
-    
+
+    def forward_simple(self, pred, gt, class_weight):
+        loss = torch.sum(pred)
+        print(loss)
+        return loss
+
+        
     #This is written for a whole batch
     def forward(self, pred, gt, class_weight):
-        #pred_f = torch.permute((1,0,2,3,4))
+        
         batch_size = pred.shape[0]
-        print(batch_size)
+        #print("batch_size ",batch_size)
         pred_f = torch.flatten(pred, start_dim=2)
         gt_f = torch.flatten(gt, start_dim=2)
 
         print("pred_f", pred_f.shape, pred_f.dtype)
-        print("gt_f", gt_f.shape, gt_f.dtype)
-        print("p_f*g_f",(pred_f*gt_f).shape)
-        #print(inter.dtype)
-        #inter = self.intersect(pred_f, gt_f)
+        #print("gt_f", gt_f.shape, gt_f.dtype)
+        #print("p_f*g_f",(pred_f*gt_f).shape, (pred_f*gt_f).dtype)
+        ##print(inter.dtype)
+        ##inter = self.intersect(pred_f, gt_f)
         
         inter = torch.sum(pred_f*gt_f,dim=2)
-        print("inter",inter.shape)
-        print("class_weight.shape", class_weight.shape)
+        #print("inter",inter.shape, inter.dtype)
+        #print("class_weight.shape", class_weight.shape, class_weight.dtype)
         numerator = 2.0 * torch.matmul(inter, class_weight)
-        print("numerator =", numerator)
+        ## MMM print("numerator =", numerator)
        
         union = torch.add(pred_f, gt_f)
         union = torch.sum(union, dim=2)
-        print("union",union.shape)
+        #print("union",union.shape)
         denominator = torch.matmul(union, class_weight)
-        print("denominator = ", denominator) 
+        ## MMMprint("denominator = ", denominator) 
         
         loss = batch_size-torch.sum(numerator/denominator)
         print(loss)
