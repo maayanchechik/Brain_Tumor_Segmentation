@@ -5,6 +5,14 @@ from torchvision import transforms as T
 import numpy as np
 import os
 
+def resize_brain_labels(tensor_brain_labels):
+    tumor_voxels = tensor_brain_labels[0]+tensor_brain_labels[1]+tensor_brain_labels[2]
+    non_tumor = 1-tumor_voxels
+    non_tumor = torch.unsqueeze(non_tumor, dim=0)
+    new_brain_labels = torch.cat((tensor_brain_labels, non_tumor), dim=0)
+    print("tensor_brain_labels.shape", new_brain_labels.shape)
+    return new_brain_labels
+
 #This function groups each paitients brain from 0-154 slices to a full brain that is a tensor and saves it
 def group_brain():
     file_path = '/home/mc/Brain_Tumor_Segmentation/data/data/BraTS2020_training_data/content/data_slices/volume_'
@@ -43,6 +51,9 @@ def group_brain():
         print("tensor_brain_image.size() ",tensor_brain_image.size())
         tensor_brain_image = tensor_brain_image.permute(3,1,2,0)
         tensor_brain_labels = tensor_brain_labels.permute(3,1,2,0)
+        #resize brain labels to have 4 arrays in the first dimention (representing classes),
+        #one for a voxel being non tumor
+        tensor_brain_labels = resize_brain_labels(tensor_brain_labels)
         #save brain_image and brain labels of this patient
         brain_name_image = "volume_" + str(patient_num) + "_image.pt"
         brain_name_labels = "volume_" + str(patient_num) + "_labels.pt"

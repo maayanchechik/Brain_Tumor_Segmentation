@@ -43,13 +43,14 @@ class UNet_3D(nn.Module):
         self.conv14 = nn.Conv3d(32, 32, kernel_size = (3,3,3), padding = padding)
         self.gnorm14 = nn.GroupNorm(num_groups,32)
 
-        self.conv_last = nn.Conv3d(32, 3, kernel_size = (1,1,1))
+        self.conv_last = nn.Conv3d(32, 4, kernel_size = (1,1,1))
 
         #other
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout3d()
         self.final_activation = nn.Softmax(dim = 1)
         self.maxpool = nn.MaxPool3d(pool_kernal)
+        
 
     def forward(self, X):
         y1 = self.gnorm1(self.relu(self.conv1(X)))
@@ -89,9 +90,9 @@ class UNet_3D(nn.Module):
         y13 = self.gnorm13(self.relu(self.conv13(y12_drop)))
         y14 = self.gnorm14(self.relu(self.conv14(y13)))
         conv_out = self.conv_last(y14)
-        activation_out = self.final_activation(y14)
+        activation_out = self.final_activation(conv_out)
 
-        return conv_out, activation_out 
+        return activation_out 
 
 
         

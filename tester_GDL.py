@@ -12,11 +12,33 @@ from dice_loss import GDL
 #e = a*b
 #print(e)
 
+
+
+
+
 run = True
 if(run == True):
-    pred = torch.ones([2,3,2,2,2], dtype=float)
-    gt = torch.ones([2,3,2,2,2], dtype=float)
-    class_weight = torch.tensor([0.2,0.3,0.5],dtype=float)
+    print("first")
+    pred = torch.zeros([2,3,2,2,2], dtype=float)
+    gt = torch.zeros([2,3,2,2,2], dtype=float)
+    pred[0][0][0][0][0] = 0
+    pred[1][0][0][0][0] = 25
+    pred[1][1][0][0][0] = 0
+    gt[0][0][0][0][0] = 0
+    gt[1][0][0][0][0] = 1
+    gt[1][1][0][0][0] = 1
+    class_weight = torch.tensor([1,1,1],dtype=float)
+    loss = GDL()(pred,gt,class_weight)
+    print("second")
+    pred = torch.zeros([2,3,2,2,2], dtype=float)
+    gt = torch.zeros([2,3,2,2,2], dtype=float)
+    pred[0][0][0][0][0] = 0
+    pred[1][0][0][0][0] = -3
+    pred[1][1][0][0][0] = 0
+    gt[0][0][0][0][0] = 1
+    gt[1][0][0][0][0] = 1
+    gt[1][1][0][0][0] = 1
+    class_weight = torch.tensor([1,1,1],dtype=float)
     loss = GDL()(pred,gt,class_weight)
 else:
     bc = torch.ones([2,3], dtype=float)

@@ -8,39 +8,35 @@ from Brats_sampler import BratsSampler
 import matplotlib.pyplot as plt
 move_to_cuda = True
 
-def train_model(model,optimizer, dataloader, class_weight, nepochs, reg_w):
+def train_model(model,optimizer, dataloader, class_weight, nepochs, batch_size):
     train_losses = []
+    torch.cuda.empty_cache()
     for e in range(nepochs):
+        if e == 25:
+            for g in optimizer.param_groups:
+                g['lr'] = 0.001
         print("epoch = ",e)
         model.train()
         for batch_i, (batch_patch_image, batch_patch_labels) in enumerate(dataloader):
-            optimizer.zero_grad()
+            print("bp_labels.shape = ",batch_patch_labels.shape)
+            bp_image = batch_patch_image.to("cuda")
+            bp_labels = batch_patch_labels.to("cuda")
+            bp_pred = model(bp_image)
+            max_pred = torch.max(bp_pred)
+            min_pred = torch.min(bp_pred)
+            print("max_pred= ", max_pred, "min_pred= ", min_pred)
+            loss = GDL()(bp_pred, bp_labels, class_weight)
+            print("\nbatch_index = ", batch_i,
+                  "loss before step = ", loss.item(),"\n")
             
-            # bp_image = batch_patch_image.to("cuda")#float64
-            # #print("bp_image", bp_image.type())
-            # #print("bp_image is float ", isinstance(bp_image[0][0][0][0][0].item(), float))
-            # bp_labels = batch_patch_labels.to("cuda")#uint8
-            # #       print("bp_image", bp_labels.type())
-            # #       print("bp_labels is float " ,
-            # #            isinstance(bp_labels[0][0][0][0][0].item(), float))
-            # bp_pred, activation = model(bp_image)
-            # #       problem with conv() cuz weights and images
-            # #       are different types, bp_image is tensor.float64,
-            # #       and w is tensor.float32?
-
-            bp_image = batch_patch_image.to("cuda")#float64
-            bp_labels = batch_patch_labels.to("cuda")#uint8
-            bp_pred, activation = model(bp_image)
-            loss = GDL()(bp_pred, bp_labels, class_weight)
-            print("batch_index = ", batch_i,
-                  "loss before optimizer step = ", loss.item())
             loss.backward()
-            optimizer.step()
-
-            bp_pred, activation = model(bp_image)
-            loss = GDL()(bp_pred, bp_labels, class_weight)
-            print("batch_index = ", batch_i,
-                  "loss after optimizer step = ", loss.item())
+            if batch_size == 1:
+                optimizer.step()
+                optimizer.zero_grad()
+            elif batch_i%batch_size == 1:
+                optimizer.step()
+                optimizer.zero_grad()
+            
             
         train_losses.append(loss.item())
     return train_losses
@@ -65,21 +61,25 @@ def main():
                             num_workers = 2,
                             shuffle=False)
     print("num_batches =", len(dataloader))
-    
-    lr = 1e-8
-    w_decay = 1e-10
-    optimizer = optim.SGD(model.parameters(), lr=lr, weight_decay=w_decay)
-    class_weight = torch.cuda.FloatTensor([1,1,1]) #find the correct weights
-    reg_w = 1e-5
-    nepochs = 1
-    train_losses= train_model(model, optimizer,
-                              dataloader, class_weight,
-                              nepochs, reg_w)
-    print("train losses", train_losses)
-    plt.plot(train_losses, label = "train_losses")
-    plt.xlabel('epoch')
-    plt.legend()
-    plt.show()
+    ###[1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10 ,1e-11, 1e-12]:
+    plt.clf()
+    for lr in [1e-3]:
+        print("lr ", lr)
+        w_decay = 1e-5
+        optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=w_decay)
+        class_weight = torch.cuda.FloatTensor([1,1,1,1]) #find the correct weights
+        nepochs = 10
+        batch_size = 2
+        train_losses= train_model(model, optimizer,
+                                  dataloader, class_weight,
+                                  nepochs, batch_size)
+        print("train losses", train_losses)
+        plt.plot(train_losses, label = "train_losses")
+        plt.xlabel('epoch')
+        plt.legend()
+        file_path = '/home/mc/Brain_Tumor_Segmentation/loss_figs/softmax_nepoches'+str(nepochs)+'_batch'+str(batch_size)+'_lr'+ str(lr)+'.png'
+        plt.savefig(file_path)
+        plt.clf()
 
 
 main()

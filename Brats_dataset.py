@@ -17,7 +17,7 @@ class BratsDataset(Dataset):
 
         
     def __len__(self):
-        return 1
+        return 2
         # return len(self.brains)
         #one:#return 369
 
