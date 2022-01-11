@@ -3,19 +3,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.functional import interpolate
 
+
 def conv_block(in_channels, out_channels, kernel_size=(3,3,3), padding=1, num_groups=8):
-     return nn.Sequential(
-        nn.Conv3d(in_channels, out_channels, kernel_size=kernel_size, padding=padding),
-        nn.GroupNorm(num_groups,out_channels),
-        nn.Conv3d(out_channels, out_channels, kernel_size=kernel_size, padding=padding),
-        nn.GroupNorm(num_groups,out_channels)
-        )
+  return nn.Sequential(
+     nn.Conv3d(in_channels, out_channels, kernel_size=kernel_size, padding=padding),
+     nn.GroupNorm(num_groups, out_channels),
+     nn.ReLU()#inplace?
+     )
+def double_conv(in_channels, out_channels, kernel_size=(3,3,3), padding=1, num_groups=8):
+  return nn.Sequential(
+    conv_block(in_channels, out_channels, kernel_size=(3,3,3), padding=1, num_groups=8)
+    conv_block(out_channels, out_channels, kernel_size=(3,3,3), padding=1, num_groups=8)
+    )
+
        
 def encoder_block(in_cannels, out_channels, kernel_size, padding, num_groups, pool_kernal):
     return nn.Sequential(
         nn.MaxPool3d(pool_kernal),
         nn.Dropout3d(),
-        conv_block(in_cannels, out_channels, kernel_size , padding , num_groups)
+        double_conv(in_cannels, out_channels, kernel_size , padding , num_groups)
         )
 
 #decoder cannot be sequential becuase of concat...        
@@ -24,7 +30,7 @@ class decoder_block(nn.Module):
         super(decoder_block, self).__init__()
         self.drop_conv = nn.Sequential(
             nn.Dropout3d(),
-            conv_block(in_cannels, out_channels, kernel_size, padding, num_groups)
+            double_conv(in_cannels, out_channels, kernel_size, padding, num_groups)
             )
     def forward(self, x, encoder_fmap):
         y = interpolate(x, scale_factor = 2, mode='nearest')
@@ -38,7 +44,7 @@ class UNet_3D(nn.Module):
         encoder_list = []
         for i in range(len(out_channels)):
             if i==0:
-                encoder = conv_block(in_channels, out_channels[i], kernel_size, padding, num_groups)
+                encoder = double_conv(in_channels, out_channels[i], kernel_size, padding, num_groups)
             else:
                 encoder = encoder_block(out_channels[i-1], out_channels[i], kernel_size, padding, num_groups, pool_kernal)
             encoder_list.append(encoder)

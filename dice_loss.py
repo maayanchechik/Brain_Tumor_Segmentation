@@ -54,10 +54,10 @@ class GDL(nn.Module):
         ##inter = self.intersect(pred_f, gt_f)
         
         inter = torch.sum(pred_f*gt_f,dim=2)
-        print("gt_f sum =", torch.sum(gt_f, dim=2),
-              "pred_f_sum = ", torch.sum(pred_f, dim=2),
-              #"pred_f = ", pred_f.shape, pred_f.dtype,
-              "intersection = ", inter, inter.dtype)
+        #print("gt_f sum =", torch.sum(gt_f, dim=2),
+        #      "pred_f_sum = ", torch.sum(pred_f, dim=2),
+        #      "pred_f = ", pred_f.shape, pred_f.dtype,
+        #      "intersection = ", inter, inter.dtype)
         #print("class_weight.shape", class_weight.shape, class_weight.dtype)
         numerator = 2.0 * torch.matmul(inter, class_weight)
        
@@ -67,10 +67,10 @@ class GDL(nn.Module):
         ratio = numerator/denominator.clamp(min=1e-6)
         loss = batch_size - torch.sum(numerator/denominator.clamp(min=1e-6))
 
-        print("numerator =", numerator.cpu().detach().numpy(), 
-              "union", union.cpu().detach().numpy(),
-              "denominator = ", denominator.cpu().detach().numpy(),
-              "ratio = ", ratio.cpu().detach().numpy(),
-              "loss = ", loss.cpu().detach().numpy())
+        #print("numerator =", numerator.cpu().detach().numpy(), 
+        #      "union", union.cpu().detach().numpy(),
+        #      "denominator = ", denominator.cpu().detach().numpy(),
+        #      "ratio = ", ratio.cpu().detach().numpy(),
+        #      "loss = ", loss.cpu().detach().numpy())
 
         return loss
