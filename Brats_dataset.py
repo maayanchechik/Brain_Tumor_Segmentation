@@ -4,7 +4,7 @@ import h5py
 import numpy as np
 
 class BratsDataset(Dataset):
-    def __init__(self, patch_size, len_dataset):
+    def __init__(self, patch_size, len_dataset, transform):
         basedir = '/home/mc/Brain_Tumor_Segmentation/data/data/'
         #later add a self.cash that has some of the data to save time,
         #bc some of the data is in RAM and not disc
@@ -15,6 +15,7 @@ class BratsDataset(Dataset):
         self.brain_size = np.array([4,240,240,154])
         # self.brains = pd.read_csv(basedir + 'BraTS20\ Training\ Metadata.csv')
         self.len_dataset = len_dataset
+        self.transform = transform
 
         
     def __len__(self):
@@ -47,8 +48,9 @@ class BratsDataset(Dataset):
         #index is randomly chosen int that chooses which tumor index will be the center
         
         ######ONLY FOR OVERFITTING
-        #index = np.random.randint(0, len(tumor_indices_per_dim[0]))
-        index = 0
+        #index = 0
+        index = np.random.randint(0, len(tumor_indices_per_dim[0]))
+        
         
         #The first cell is the dim of the modules which is not sliced,
         #so will stay empty but is here so it wont confuse the dim count.
@@ -73,6 +75,10 @@ class BratsDataset(Dataset):
         brain_image, brain_labels = self.get_brain(brain_index)
         patch_image, patch_labels = self.get_patch(brain_image, brain_labels)
         patch = (patch_image, patch_labels)
+        patch = self.transform(patch)
+        #print(patch)
+        #i_p, l_p = patch
+        #print("patch type", dtype(i_p), dtype(l_p))
         ### print("__get_item__: brain_index = ", brain_index)
         return patch
 
