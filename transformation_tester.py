@@ -61,6 +61,7 @@ class random_intensity_shift(object):
     self.max = max
   def __call__(self, image):
     scale = np.random.uniform(self.min,self.max)
+    image = image.numpy()
     std = np.std(image[image>0])
     image = image + (scale*std)
     return image

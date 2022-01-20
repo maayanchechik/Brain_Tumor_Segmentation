@@ -52,6 +52,7 @@ class random_intensity_shift(object):
   def __call__(self, image_labels_tuple):
     image, labels = image_labels_tuple
     scale = np.random.uniform(self.min,self.max)
-    std = np.std(image[image>0])
+    image_np = image.numpy()
+    std = np.std(image_np[image_np>0])
     image = image + (scale*std)
     return (image, labels)

@@ -74,10 +74,13 @@ def main():
         model = model.to("cuda")
     len_dataset = 369
     batch_size = 1 #for space reasons
-    transform = transforms.Compose([random_flip(),
-                                    random_rotate90(),
-                                    random_intensity_scale(),
+    #transform = transforms.Compose([random_flip(),
+    #                                random_rotate90(),
+    #                                random_intensity_scale(),
+    #                                random_intensity_shift()])
+    transform = transforms.Compose([random_intensity_scale(),
                                     random_intensity_shift()])
+    
     dataset = BratsDataset(patch_size = 112, len_dataset = len_dataset, transform = transform)
     dataset_sizes = [295,37,37] #about 80% train
     #sampler = BratsSampler(batch_size = batch_size, len_dataset = len_dataset)
