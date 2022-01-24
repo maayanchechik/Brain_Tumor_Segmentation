@@ -31,25 +31,31 @@ class encoder_block(nn.Module):
     super(encoder_block, self).__init__()
     self.down = nn.Sequential(nn.MaxPool3d(pool_kernal),
                               nn.Dropout3d())
-    self.res_block = res_block(self, in_channels, out_channels, kernel_size, padding, num_groups)
+    self.res_block = res_block(in_channels, out_channels, kernel_size, padding, num_groups)
   def forward(self,x):
+    #print("returns x.shape = ",x.shape)
     x = self.down(x)
+    #print("receives x.shape = ",x.shape)
     x = self.res_block(x)
     return x
 
 class decoder_block(nn.Module):
   def __init__(self, in_channels, out_channels, kernel_size=(3,3,3), padding=1, num_groups=8):
     super(decoder_block, self).__init__()
-    self.up = nn.ConvTranspose3d(in_channels, out_channels, kernel_size, padding)
+    #conv transposed params are calculated so with: out = (in-1)*s -2p +k
+    #28 = (14-1)*2 -2*1 +4
+    self.up = nn.ConvTranspose3d(in_channels, out_channels, kernel_size=4, stride=2, padding=1)
     self.drop_conv = nn.Sequential(nn.Dropout3d(),
-                                   res_block(in_channels, out_channels, kernel_size, padding, num_groups))
+                                   res_block(out_channels, out_channels, kernel_size, padding, num_groups))
   def forward(self, x, feature_map):
+    #print("feature_map.shape=",feature_map.shape)
     x = self.up(x)
+    #print("x_up.shape=",x.shape)
     x = x + feature_map
-    x = drop_conv(x)
+    x = self.drop_conv(x)
     return x
 
-class Res_Unet(nn.Module):
+class Res_UNet(nn.Module):
   def __init__(self, in_channels=4, out_channels=[32,64,128,256], kernel_size=(3,3,3), padding=1, num_groups=8, pool_kernal=2):
     super(Res_Unet, self).__init__()
     encoder_list = []
@@ -73,15 +79,15 @@ class Res_Unet(nn.Module):
       nn.Softmax(dim=1)
     )
     
-    def forward(self, x):
-      encoder_fmap = []
-      for encoder in self.encoders:
-        x = encoder(x)
-        encoder_fmap.append(x)
-      r_encoder_fmap = list(reversed(encoder_fmap))
-      r_encoder_fmap = r_encoder_fmap[1:]
-      for i, decoder in enumerate(self.decoders):
-        x = decoder(x, r_encoder_fmap[i])
+  def forward(self, x):
+    encoder_fmap = []
+    for encoder in self.encoders:
+      x = encoder(x)
+      encoder_fmap.append(x)
+    r_encoder_fmap = list(reversed(encoder_fmap))
+    r_encoder_fmap = r_encoder_fmap[1:]
+    for i, decoder in enumerate(self.decoders):
+      x = decoder(x, r_encoder_fmap[i])
        
-      x = self.final(x)
-      return x
+    x = self.final(x)
+    return x

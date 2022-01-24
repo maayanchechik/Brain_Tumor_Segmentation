@@ -9,20 +9,13 @@ import torchvision.transforms as transforms
 class random_flip(object):
   def __init__(self, p=0.5):
     super().__init__()
-    print("init")
     self.p = p
   def __call__(self, image):
-    print("in flip:")
     random = torch.rand(1)
     if random.item() < self.p:
-      print("#####before- stuck here???")
-      image = image.detach().numpy()
-      print("#####after-stuck here???")
-      print("#####image=numpy=",isinstance(image, np.ndarray))
+      image = image.numpy()
       image = np.flip(image,(1,2))
-      image = torch.from_numpy(image)
-      print("#####end if")
-    print("end flip")
+      image = torch.from_numpy(np.ndarray.copy(image))
     return image
 
 class random_rotate90(object):
@@ -35,7 +28,9 @@ class random_rotate90(object):
     axes_rot = np.random.choice(self.axes_rot, size=2, replace=False)
     axes_rot.sort()
     num_rot = np.random.choice(self.num_rot)
-    image = np.rot90(sample, num_rot, axes=axes_rot)
+    sample = sample.numpy()
+    sample = np.rot90(sample, num_rot, axes=axes_rot)
+    sample = torch.from_numpy(np.ndarray.copy(sample))
     return sample
   def __call__(self, image):
     random = torch.rand(1)
@@ -64,12 +59,16 @@ class random_intensity_shift(object):
     image = image.numpy()
     std = np.std(image[image>0])
     image = image + (scale*std)
+    image = torch.from_numpy(np.ndarray.copy(image))
     return image
 
 #####################################################
 
 transform = transforms.Compose([transforms.ToTensor(),
-                                random_flip()])
+                                random_flip(),
+                                random_rotate90(),
+                                random_intensity_shift(),
+                                random_intensity_scale()])
 
 batch_size = 4
 

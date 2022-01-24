@@ -38,7 +38,7 @@ class decoder_block(nn.Module):
     y = self.drop_conv(y)
     return y
 
-class UNet_3D(nn.Module):
+class UNet(nn.Module):
   def __init__(self, in_channels=4, out_channels=[32,64,128,256], kernel_size=(3,3,3), padding=1, num_groups=8, pool_kernal=2):
     super(UNet_3D, self).__init__()
     encoder_list = []

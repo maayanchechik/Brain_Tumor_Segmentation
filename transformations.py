@@ -8,8 +8,12 @@ class random_flip(object):
     random = torch.rand(1)
     image, labels = image_labels_tuple
     if random.item() < self.p:
-      image = np.flip(image,(1,2,3))
-      labels = np.flip(labels,(1,2,3))#why does the paper do (0,1,2)?
+      image_np = image.numpy()
+      labels_np = labels.numpy()
+      image = np.flip(image_np,axis=[1,2,3])
+      labels = np.flip(labels_np,axis=[1,2,3])
+      image = torch.from_numpy(np.ndarray.copy(image_np))
+      labels = torch.from_numpy(np.ndarray.copy(labels_np))
     return (image, labels)
 
 class random_rotate90(object):
@@ -22,7 +26,9 @@ class random_rotate90(object):
     axes_rot = np.random.choice(self.axes_rot, size=2, replace=False)
     axes_rot.sort()
     num_rot = np.random.choice(self.num_rot)
-    image = np.rot90(sample, num_rot, axes=axes_rot)
+    sample_np = sample.numpy()
+    sample_np = np.rot90(sample_np, num_rot, axes=axes_rot)
+    sample = torch.from_numpy(np.ndarray.copy(sample_np))
     return sample
   def __call__(self, image_labels_tuple):
     random = torch.rand(1)
@@ -54,5 +60,6 @@ class random_intensity_shift(object):
     scale = np.random.uniform(self.min,self.max)
     image_np = image.numpy()
     std = np.std(image_np[image_np>0])
-    image = image + (scale*std)
+    image_np = image_np + (scale*std)
+    image = torch.from_numpy(np.ndarray.copy(image_np))
     return (image, labels)

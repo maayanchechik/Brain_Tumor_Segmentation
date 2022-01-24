@@ -1,6 +1,8 @@
 import torch
 import torch.optim as optim
-from Unet_3D import UNet_3D
+from Unet_3D import UNet
+from Res_Unet_3D import Res_UNet
+from Vnet_3D import VNet
 from dice_loss import GDL
 from torch.utils.data import DataLoader
 from Brats_dataset import BratsDataset
@@ -65,7 +67,7 @@ def train_model(model,optimizer, train_dataloader, validation_dataloader, class_
 
 def main():
     torch.manual_seed(0)
-    model = UNet_3D() 
+    model = VNet() 
     for param in model.parameters():
         param.requires_grad = True
     
@@ -74,14 +76,12 @@ def main():
         model = model.to("cuda")
     len_dataset = 369
     batch_size = 1 #for space reasons
-    #transform = transforms.Compose([random_flip(),
-    #                                random_rotate90(),
-    #                                random_intensity_scale(),
-    #                                random_intensity_shift()])
-    transform = transforms.Compose([random_intensity_scale(),
+    transform = transforms.Compose([random_flip(),
+                                    random_rotate90(),
+                                    random_intensity_scale(),
                                     random_intensity_shift()])
     
-    dataset = BratsDataset(patch_size = 112, len_dataset = len_dataset, transform = transform)
+    dataset = BratsDataset(patch_size = 96, len_dataset = len_dataset, transform = transform)
     dataset_sizes = [295,37,37] #about 80% train
     #sampler = BratsSampler(batch_size = batch_size, len_dataset = len_dataset)
     train_dataset, validation_dataset, test_dataset = torch.utils.data.random_split(dataset,
@@ -100,7 +100,8 @@ def main():
         print("lr ", lr)
         w_decay = 1e-5
         optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=w_decay)
-        class_weight = torch.cuda.FloatTensor([1,1,1,1]) #find the correct weights
+        #class_weight = torch.cuda.FloatTensor([1,1,1,1]) #find the correct weights
+        class_weight = torch.cuda.FloatTensor([0.1,0.35,0.2,0.35])
         nepochs = 2
         batch_size = 2
         train_losses, valid_losses = train_model(model, optimizer, train_dataloader,
@@ -114,7 +115,7 @@ def main():
         plt.xlabel('epoch')
         plt.ylabel('loss')
         plt.legend()
-        file_path = '/home/mc/Brain_Tumor_Segmentation/loss_figs/dynamic_unet_dataset_whole_dataset_validwithtorchnograd_nepoches'+str(nepochs)+'_batch'+str(batch_size)+'_lr'+ str(lr)+'.png'
+        file_path = '/home/mc/Brain_Tumor_Segmentation/loss_figs/Residual_unet_dataset_whole_dataset_validwithtorchnograd_nepoches_with_classweights'+str(nepochs)+'_batch'+str(batch_size)+'_lr'+ str(lr)+'.png'
         plt.savefig(file_path)
         plt.clf()
 
