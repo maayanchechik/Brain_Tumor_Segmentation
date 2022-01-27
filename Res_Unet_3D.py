@@ -1,4 +1,3 @@
-#check inchannel/outchannels
 import torch
 import torch.nn as nn
 def conv_block(in_channels, out_channels, kernel_size=(3,3,3), padding=1, num_groups=8):
@@ -42,7 +41,7 @@ class encoder_block(nn.Module):
 class decoder_block(nn.Module):
   def __init__(self, in_channels, out_channels, kernel_size=(3,3,3), padding=1, num_groups=8):
     super(decoder_block, self).__init__()
-    #conv transposed params are calculated so with: out = (in-1)*s -2p +k
+    #conv transposed params are calculated with: out = (in-1)*s -2p +k
     #28 = (14-1)*2 -2*1 +4
     self.up = nn.ConvTranspose3d(in_channels, out_channels, kernel_size=4, stride=2, padding=1)
     self.drop_conv = nn.Sequential(nn.Dropout3d(),
@@ -57,7 +56,7 @@ class decoder_block(nn.Module):
 
 class Res_UNet(nn.Module):
   def __init__(self, in_channels=4, out_channels=[32,64,128,256], kernel_size=(3,3,3), padding=1, num_groups=8, pool_kernal=2):
-    super(Res_Unet, self).__init__()
+    super(Res_UNet, self).__init__()
     encoder_list = []
     for i in range(len(out_channels)):
       if i==0:

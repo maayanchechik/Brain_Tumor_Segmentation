@@ -4,23 +4,34 @@ import h5py
 import numpy as np
 
 class BratsDataset(Dataset):
-    def __init__(self, patch_size, len_dataset, transform):
+    def __init__(self, patch_size, len_dataset, transform, patching, is_test):
         basedir = '/home/mc/Brain_Tumor_Segmentation/data/data/'
         #later add a self.cash that has some of the data to save time,
         #bc some of the data is in RAM and not disc
         super().__init__()
-        self.data_path = basedir + "BraTS2020_training_data/content/data_patients/"
+        if is_test:
+            self.data_path = basedir + "BraTS2020_test_data/"
+        else:
+            self.data_path = basedir + "BraTS2020_training_data/content/data_patients/"
         #self.data_path = basedir + "BraTS2020_training_data/content/one_patient/"
         self.patch_size = patch_size
         self.brain_size = np.array([4,240,240,154])
         # self.brains = pd.read_csv(basedir + 'BraTS20\ Training\ Metadata.csv')
         self.len_dataset = len_dataset
         self.transform = transform
+        self.patching = patching
 
         
     def __len__(self):
         return self.len_dataset
 
+    def set_patching(self, patching):
+        self.patching = patching
+        print("patching is ",self.patching)
+        
+    def set_patch_size(self, patch_size):
+        self.patch_size = patch_size
+        print("patch_size is ", self.patch_size)
         
     def get_brain(self,index):
         index_path_image = self.data_path + "volume_" + str(index+1) + "_image.pt"
@@ -39,7 +50,38 @@ class BratsDataset(Dataset):
             return center_per_dim
         
 
-    def get_patch(self, brain_image, brain_labels):
+    def get_patch_random(self, brain_image, brain_labels):
+        i_s = np.array([0,0,0,0])
+        i_e = np.array([0,0,0,0])
+        for dim in range(1,4):
+            cur_i_patch_center = np.random.randint(0, self.brain_size[dim])
+            cur_i_patch_center = self.fix_patch_center(cur_i_patch_center, dim)
+            i_s[dim] = int(cur_i_patch_center +1 - self.patch_size/2)
+            i_e[dim] = int(cur_i_patch_center +1+ self.patch_size/2)
+        patch_image = brain_image[:, i_s[1]:i_e[1], i_s[2]:i_e[2], i_s[3]:i_e[3]]
+        patch_labels = brain_labels[:, i_s[1]:i_e[1], i_s[2]:i_e[2], i_s[3]:i_e[3]]
+        return patch_image, patch_labels
+    
+    def get_patch_random_center_tumor(self, brain_image, brain_labels):
+        random = torch.rand(1)
+        if random.item() < 0.5:
+            tumor_indices_per_dim = np.where(brain_labels==1)
+        else:
+            tumor_indices_per_dim = np.where(brain_labels==0)
+        index = np.random.randint(0, len(tumor_indices_per_dim[0]))
+        i_s = np.array([0,0,0,0])
+        i_e = np.array([0,0,0,0])
+        for dim in range(1,4):
+            cur_i_patch_center = tumor_indices_per_dim[dim][index]
+            cur_i_patch_center = self.fix_patch_center(cur_i_patch_center, dim)
+            i_s[dim] = int(cur_i_patch_center +1 - self.patch_size/2)
+            i_e[dim] = int(cur_i_patch_center +1+ self.patch_size/2)
+        patch_image = brain_image[:, i_s[1]:i_e[1], i_s[2]:i_e[2], i_s[3]:i_e[3]]
+        patch_labels = brain_labels[:, i_s[1]:i_e[1], i_s[2]:i_e[2], i_s[3]:i_e[3]]
+        return patch_image, patch_labels
+
+        
+    def get_patch_center_tumor(self, brain_image, brain_labels):
         #where() returns a list of arrays. Each array represents a dimention.
         #In each array there are the dimention's indices of the labels that are 1.
         #All in all this list is an ordered account of the indices of tumor pixels.
@@ -50,8 +92,7 @@ class BratsDataset(Dataset):
         ######ONLY FOR OVERFITTING
         #index = 0
         index = np.random.randint(0, len(tumor_indices_per_dim[0]))
-        
-        
+                
         #The first cell is the dim of the modules which is not sliced,
         #so will stay empty but is here so it wont confuse the dim count.
         #i_start_patch_per_dim = [] but name to long so:
@@ -73,9 +114,18 @@ class BratsDataset(Dataset):
     
     def __getitem__(self, brain_index):
         brain_image, brain_labels = self.get_brain(brain_index)
-        patch_image, patch_labels = self.get_patch(brain_image, brain_labels)
+        if self.patching == 'CENTER_TUMOR':
+            patch_image, patch_labels = self.get_patch_center_tumor(brain_image, brain_labels)
+        elif self.patching == 'RANDOM_CENTER_TUMOR':
+            patch_image, patch_labels = self.get_patch_random_center_tumor(brain_image, brain_labels)
+        elif self.patching == 'RANDOM':
+            patch_image, patch_labels = self.get_patch_random(brain_image, brain_labels)
+        else:
+            print("ERROR PATCHING UNKNOWN")
+            quit()
         patch = (patch_image, patch_labels)
-        patch = self.transform(patch)
+        if self.transform != None:
+            patch = self.transform(patch)
         #print(patch)
         #i_p, l_p = patch
         #print("patch type", dtype(i_p), dtype(l_p))

@@ -4,15 +4,29 @@ from collections import OrderedDict
 
 class first_conv_block(nn.Module):
   def __init__(self, in_channels, out_channels):
+    self.in_channels = in_channels
+    self.out_channels = out_channels
     super(first_conv_block,self).__init__()
     self.first_conv = nn.Sequential(
       nn.Conv3d(in_channels, out_channels, kernel_size=(5,5,5), padding=2),
       nn.InstanceNorm3d(out_channels)
     )
+    self.prelu = nn.PReLU()
+    
   def forward(self, x):
     res = x
     x = self.first_conv(x)
-    #x = res + x#
+    #add
+    repeats = int(self.out_channels/self.in_channels)
+    # This is the first block, so there wasn't a down to make the channels
+    # of the res equal to the out_channels of the conv. So in order to add
+    # the two together, we must repeat the res to have the same amount of channels
+    # as the output of the conv has.
+    # repeat is pytorch function, each num is the amount of repetitions in that dim
+    res = res.repeat(1,repeats, 1 , 1, 1)
+    x = self.prelu(x)
+    res = self.prelu(res)
+    x = res + x
     return x
 
 def conv_block(in_channels, out_channels, kernel_size=(5,5,5), padding=2):
@@ -22,7 +36,7 @@ def conv_block(in_channels, out_channels, kernel_size=(5,5,5), padding=2):
     nn.PReLU()
   )
   
-#this is not for thefirst conv
+#This is not for the first conv
 def create_convs(num_convs, in_channels, out_channels):
   modules = OrderedDict()
   modules['conv_1'] = (conv_block(in_channels, out_channels))

@@ -1,18 +1,6 @@
 import torch
 import torch.nn as nn
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-
-
 class GDL(nn.Module):
     
     #def intersect(self, m1, m2):
@@ -26,6 +14,7 @@ class GDL(nn.Module):
         #print(inter.shape)
         #return inter
 
+    #for debugging
     def forward_simple(self, pred, gt, class_weight):
         pred_f = torch.flatten(pred, start_dim=2)
         gt_f = torch.flatten(gt, start_dim=2)
@@ -60,12 +49,15 @@ class GDL(nn.Module):
         #      "intersection = ", inter, inter.dtype)
         #print("class_weight.shape", class_weight.shape, class_weight.dtype)
         numerator = 2.0 * torch.matmul(inter, class_weight)
-       
-        union = torch.add(pred_f, gt_f)
+
+        # There is no explenation why it is necessary to square the matrices,
+        # yet this is how it its done everywhere, and inorder to compare to the
+        # dice loss results of the paper, i will do this as well.
+        union = torch.add(pred_f*pred_f, gt_f*gt_f)
         union = torch.sum(union, dim=2)
         denominator = torch.matmul(union, class_weight)
         ratio = numerator/denominator.clamp(min=1e-6)
-        loss = batch_size - torch.sum(numerator/denominator.clamp(min=1e-6))
+        loss = batch_size - torch.sum(ratio)
 
         #print("numerator =", numerator.cpu().detach().numpy(), 
         #      "union", union.cpu().detach().numpy(),
