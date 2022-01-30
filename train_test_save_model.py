@@ -22,10 +22,10 @@ def main():
                                     random_intensity_scale(),
                                     random_intensity_shift()])
     dataset = BratsDataset(patch_size=96, len_dataset=len_dataset, transform=transform,
-                           patching='CENTER_TUMOR', is_test=False)
+                           patching='RANDOM_CENTER_TUMOR', is_test=False)
     dataset_sizes = [295,37] #about 80% train and 37 for test
     train_dataset, validation_dataset = torch.utils.data.random_split(dataset, dataset_sizes)
-    test_dataset = BratsDataset(patch_size=128, len_dataset=37, transform = None,
+    test_dataset = BratsDataset(patch_size=96, len_dataset=37, transform = None,
                                 patching='RANDOM', is_test=True)
     
     ##########DEFINE DATALOADER##########
@@ -85,11 +85,12 @@ def main():
         ###################
         #######TEST########
         ###################
-        test_losses, average_loss = test_model(model, test_dataloader, class_weight)
+        test_dice_losses, test_hausdorff_losses, average_dice_loss, average_hausdorff_loss = test_model(model, test_dataloader, class_weight)
         
            #######VISUALIZE TEST##########
-        print("test losses", test_losses)
-        plt.plot(test_losses, 'b', label = "test_losses")
+        print("test dice losses", test_dice_losses)
+        plt.plot(test_dice_losses, 'b', label = "test_dice_losses")
+        plt.plot(test_hausdorff_losses, 'g', label = "test_hausdorff_losses")
         plt.xlabel('images')
         plt.ylabel('loss')
         plt.legend()
@@ -110,11 +111,20 @@ def main():
         train_loss_file_name = folder_path + 'TrainLosses_'+model_path+ ".pkl"
         train_loss_file = open(train_loss_file_name,"wb")
         pickle.dump(train_losses,train_loss_file)
-        loss_file.close()
+        train_loss_file.close()
         valid_loss_file_name = folder_path + 'ValidLosses_'+model_path+ ".pkl"
         valid_loss_file = open(valid_loss_file_name,"wb")
         pickle.dump(valid_losses,valid_loss_file)
-        loss_file.close()
-        
+        valid_loss_file.close()
+        #test losses
+        test_dice_loss_file_name = folder_path + 'TestDiceLosses_'+model_path+ ".pkl"
+        test_dice_loss_file = open(test_dice_loss_file_name,"wb")
+        pickle.dump(test_dice_losses,test_dice_loss_file)
+        test_dice_loss_file.close()
+        test_hausdorff_loss_file_name = folder_path + 'TestHausdorffLosses_'+model_path+ ".pkl"
+        test_hausdorff_loss_file = open(test_hausdorff_loss_file_name,"wb")
+        pickle.dump(test_hausdorff_losses,test_hausdorff_loss_file)
+        test_hausdorff_loss_file.close()
+
 if __name__ == "__main__":
     main()
