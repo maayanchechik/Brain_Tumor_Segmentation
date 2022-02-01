@@ -8,6 +8,8 @@ from Brats_dataset import BratsDataset
 from Brats_sampler import BratsSampler
 from torchvision import transforms
 from transformations import random_flip, random_rotate90, random_intensity_scale, random_intensity_shift
+import os
+import pickle
 import matplotlib.pyplot as plt
 from training import train_model
 from testing import test_model
@@ -22,7 +24,7 @@ def main():
                                     random_intensity_scale(),
                                     random_intensity_shift()])
     dataset = BratsDataset(patch_size=96, len_dataset=len_dataset, transform=transform,
-                           patching='RANDOM_CENTER_TUMOR', is_test=False)
+                           patching='CENTER_TUMOR', is_test=False)
     dataset_sizes = [295,37] #about 80% train and 37 for test
     train_dataset, validation_dataset = torch.utils.data.random_split(dataset, dataset_sizes)
     test_dataset = BratsDataset(patch_size=96, len_dataset=37, transform = None,
@@ -68,7 +70,8 @@ def main():
         ###################
         ###TRAINING DATA###
         ###################
-           #######VISUALIZE TRAINING  RESULTS##########
+
+        #######VISUALIZE TRAINING  RESULTS##########
         print("train losses", train_losses)
         print("validation losses", valid_losses)
         plt.plot(train_losses, 'b', label = "train_losses")
@@ -81,6 +84,23 @@ def main():
         fig_path = folder_path + 'Training_Fig_' + model_path + '.png'
         plt.savefig(fig_path)
         plt.clf()
+        
+        ##########SAVE MODEL##########
+        model_name = "Model_" + model_path +".model"
+        model.eval()
+        save_model_path = os.path.join(folder_path, model_name)
+        torch.save(model.state_dict(), save_model_path)
+        print("saved model to path")
+
+        ##########SAVE TRAIN LOSS LISTS##########
+        train_loss_file_name = folder_path + 'TrainLosses_'+model_path+ ".pkl"
+        train_loss_file = open(train_loss_file_name,"wb")
+        pickle.dump(train_losses,train_loss_file)
+        train_loss_file.close()
+        valid_loss_file_name = folder_path + 'ValidLosses_'+model_path+ ".pkl"
+        valid_loss_file = open(valid_loss_file_name,"wb")
+        pickle.dump(valid_losses,valid_loss_file)
+        valid_loss_file.close()
 
         ###################
         #######TEST########
@@ -100,23 +120,7 @@ def main():
         plt.savefig(fig_path)
         plt.clf()
 
-        ##########SAVE MODEL##########
-        model_name = "Model_" + model_path +".model"
-        model.eval()
-        save_model_path = os.path.join(folder_path, model_name)
-        torch.save(model.state_dict(), save_model_path)
-        print("saved model to path")
-
-        ##########SAVE LOSS LISTS##########
-        train_loss_file_name = folder_path + 'TrainLosses_'+model_path+ ".pkl"
-        train_loss_file = open(train_loss_file_name,"wb")
-        pickle.dump(train_losses,train_loss_file)
-        train_loss_file.close()
-        valid_loss_file_name = folder_path + 'ValidLosses_'+model_path+ ".pkl"
-        valid_loss_file = open(valid_loss_file_name,"wb")
-        pickle.dump(valid_losses,valid_loss_file)
-        valid_loss_file.close()
-        #test losses
+           ########SAVE TEST LOSS LISTS##########
         test_dice_loss_file_name = folder_path + 'TestDiceLosses_'+model_path+ ".pkl"
         test_dice_loss_file = open(test_dice_loss_file_name,"wb")
         pickle.dump(test_dice_losses,test_dice_loss_file)
